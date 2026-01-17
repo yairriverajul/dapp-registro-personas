@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DApp Registro de Personas</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .form-group { margin-bottom: 20px; }
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: transform 0.2s;
+        }
+        button:hover { transform: translateY(-2px); }
+        button:active { transform: translateY(0); }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            display: none;
+        }
+        .result.show { display: block; }
+        .result h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        .result p {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .wallet-info {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        .wallet-info p {
+            color: #666;
+            font-size: 14px;
+        }
+        .status {
+            text-align: center;
+            color: #666;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 Registro de Personas</h1>
+        <div class="wallet-info" id="walletInfo">
+            <p>Conecta tu wallet para comenzar</p>
+        </div>
+        <button onclick="connectWallet()">Conectar Wallet</button>
+        <div class="form-group">
+            <label for="nombre">Nombre Completo:</label>
+            <input type="text" id="nombre" placeholder="Ej: Juan Pérez">
+        </div>
+        <div class="form-group">
+            <label for="edad">Edad:</label>
+            <input type="number" id="edad" placeholder="Ej: 30">
+        </div>
+        <div class="form-group">
+            <label for="direccion">Dirección:</label>
+            <input type="text" id="direccion" placeholder="Ej: Calle 72 #45-123">
+        </div>
+        <button onclick="registrarPersona()">Registrar Persona</button>
+        <button onclick="obtenerMisDatos()">Ver Mis Datos</button>
+        <div class="result" id="result">
+            <h3>Datos Registrados:</h3>
+            <p><strong>Nombre:</strong> <span id="resNombre"></span></p>
+            <p><strong>Edad:</strong> <span id="resEdad"></span></p>
+            <p><strong>Dirección:</strong> <span id="resDireccion"></span></p>
+        </div>
+        <div class="status" id="status"></div>
+    </div>
+    <script>
+        let web3, contract, account;
+        const contractABI = [{"inputs":[{"internalType":"string","name":"_nombre","type":"string"},{"internalType":"uint256","name":"_edad","type":"uint256"},{"internalType":"string","name":"_direccion","type":"string"}],"name":"registrarPersona","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"obtenerMisDatos","outputs":[{"internalType":"string","name":"","type":"string"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"}];
+        const contractAddress = "TU_DIRECCION_DEL_CONTRATO_AQUI";
+        async function connectWallet() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                    web3 = new Web3(window.ethereum);
+                    account = accounts[0];
+                    contract = new web3.eth.Contract(contractABI, contractAddress);
+                    document.getElementById('walletInfo').innerHTML = `<p>✅ Conectado: ${account.substring(0, 6)}...${account.substring(38)}</p>`;
+                    showStatus('Wallet conectada exitosamente', 'success');
+                } catch (error) {
+                    showStatus('Error al conectar wallet: ' + error.message, 'error');
+                }
+            } else {
+                showStatus('Por favor instala MetaMask', 'error');
+            }
+        }
+        async function registrarPersona() {
+            const nombre = document.getElementById('nombre').value;
+            const edad = document.getElementById('edad').value;
+            const direccion = document.getElementById('direccion').value;
+            if (!nombre || !edad || !direccion) {
+                showStatus('Por favor completa todos los campos', 'error');
+                return;
+            }
+            if (!contract) {
+                showStatus('Por favor conecta tu wallet primero', 'error');
+                return;
+            }
+            try {
+                showStatus('Procesando transacción...', 'info');
+                await contract.methods.registrarPersona(nombre, edad, direccion).send({ from: account });
+                showStatus('¡Persona registrada exitosamente!', 'success');
+                document.getElementById('nombre').value = '';
+                document.getElementById('edad').value = '';
+                document.getElementById('direccion').value = '';
+            } catch (error) {
+                showStatus('Error al registrar: ' + error.message, 'error');
+              
+            }
+        }
+        async function obtenerMisDatos() {
+            if (!contract) {
+                showStatus('Por favor conecta tu wallet primero', 'error');
+                return;
+            }
+            try {
+                showStatus('Obteniendo datos...', 'info');
+                const datos = await contract.methods.obtenerMisDatos().call({ from: account });
+                document.getElementById('resNombre').textContent = datos[0];
+                document.getElementById('resEdad').textContent = datos[1];
+                document.getElementById('resDireccion').textContent = datos[2];
+                document.getElementById('result').classList.add('show');
+                showStatus('Datos obtenidos exitosamente', 'success');
+            } catch (error) {
+                showStatus('Error: ' + error.message, 'error');
+            }
+        }
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.style.color = type === 'error' ? '#f44336' : type === 'success' ? '#4caf50' : '#2196f3';
+        }
+    </script>
+</body>
+</html>
