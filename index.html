@@ -132,7 +132,7 @@
     <script>
         let web3, contract, account;
         const contractABI = [{"inputs":[{"internalType":"string","name":"_nombre","type":"string"},{"internalType":"uint256","name":"_edad","type":"uint256"},{"internalType":"string","name":"_direccion","type":"string"}],"name":"registrarPersona","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"obtenerMisDatos","outputs":[{"internalType":"string","name":"","type":"string"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"}];
-        const contractAddress = "TU_DIRECCION_DEL_CONTRATO_AQUI";
+        const contractAddress = "0x5458C5e641f6512A1D7Acb36cA87dC9c8846D3FB";
         async function connectWallet() {
             if (typeof window.ethereum !== 'undefined') {
                 try {
